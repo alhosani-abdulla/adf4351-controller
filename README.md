@@ -123,22 +123,33 @@ Both programs use the updated `LORegisterLibrary` located in `src/LORegisterLibr
 - `LORegisterLibrary.h` - Header with data structures and function declarations
 - `LORegisterLibrary.cpp` - Implementation following ADF4351 specifications
 - `library.properties` - Arduino library metadata
-- `LORegisterLibrary.zip` - Compiled library package
 
 ## Installation
 
-1. **Install the Library:**
-   - Copy the `src/LORegisterLibrary/` folder to your Arduino libraries directory, or
-   - Install the `src/LORegisterLibrary.zip` file through Arduino IDE Library Manager
+### Method 1: Direct Installation (Recommended)
+1. Copy the entire `src/LORegisterLibrary/` folder to your Arduino libraries directory:
+   - **Windows:** `Documents\Arduino\libraries\`
+   - **macOS:** `~/Documents/Arduino/libraries/`
+   - **Linux:** `~/Arduino/libraries/`
+2. Restart Arduino IDE
 
-2. **Upload Example Programs:**
-   - Open either Arduino program from the `examples/` folder in Arduino IDE
-   - Select your board and port
-   - Upload the program
+### Method 2: ZIP Installation
+1. Create a ZIP file of the library:
+   ```bash
+   cd src
+   zip -r LORegisterLibrary.zip LORegisterLibrary/
+   ```
+2. In Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
+3. Select the generated `LORegisterLibrary.zip` file
 
-3. **Serial Monitor:**
-   - Set baud rate to 115200
-   - Use for program interaction and monitoring
+### Upload Example Programs
+1. Open either Arduino program from the `examples/` folder in Arduino IDE
+2. Select your board and port
+3. Upload the program
+
+### Serial Monitor
+- Set baud rate to 115200
+- Use for program interaction and monitoring
 
 ## Troubleshooting
 
