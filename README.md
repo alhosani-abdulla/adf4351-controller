@@ -1,11 +1,25 @@
-# Local Oscillator Controller
+# ADF4351 Controller
 
-This directory contains Arduino programs for controlling the ADF4351 Local Oscillator using the updated LORegisterLibrary that follows the ADF4351 datasheet implementation.
+Arduino controller programs for the ADF4351 PLL frequency synthesizer with comprehensive register library following the ADF4351 datasheet. Includes manual control and automated sweep functionality.
 
-## Programs
+## Repository Structure
+
+```
+adf4351-controller/
+├── README.md              # This file
+├── LICENSE                # MIT License
+├── src/                   # Source code
+│   ├── LORegisterLibrary/    # ADF4351 register calculation library
+│   └── LORegisterLibrary.zip # Packaged library for Arduino IDE
+└── examples/              # Example Arduino programs
+    ├── LO_Manual_Controller/  # Interactive manual control
+    └── LO_Sweep_Controller/   # GPIO-controlled sweep
+```
+
+## Examples
 
 ### 1. LO_Manual_Controller
-**File:** `LO_Manual_Controller/LO_Manual_Controller.ino`
+**File:** `examples/LO_Manual_Controller/LO_Manual_Controller.ino`
 
 Manual frequency control program that allows you to set specific frequencies for the Local Oscillator.
 
@@ -33,7 +47,7 @@ Manual frequency control program that allows you to set specific frequencies for
 - `?` - Show help menu
 
 ### 2. LO_Sweep_Controller  
-**File:** `LO_Sweep_Controller/LO_Sweep_Controller.ino`
+**File:** `examples/LO_Sweep_Controller/LO_Sweep_Controller.ino`
 
 Automated frequency sweep program that steps through a range of frequencies.
 
@@ -96,7 +110,7 @@ static const double B_MIN  = 902.6, B_MAX  = 957.6, B_STEP  = 0.2;
 
 ## LORegisterLibrary
 
-Both programs use the updated `LORegisterLibrary` located in `CLibraries/LORegisterLibrary/`:
+Both programs use the updated `LORegisterLibrary` located in `src/LORegisterLibrary/`:
 
 ### Key Features:
 - Full ADF4351 datasheet compliance
@@ -114,11 +128,11 @@ Both programs use the updated `LORegisterLibrary` located in `CLibraries/LORegis
 ## Installation
 
 1. **Install the Library:**
-   - Copy the `LORegisterLibrary` folder to your Arduino libraries directory, or
-   - Install the `LORegisterLibrary.zip` file through Arduino IDE Library Manager
+   - Copy the `src/LORegisterLibrary/` folder to your Arduino libraries directory, or
+   - Install the `src/LORegisterLibrary.zip` file through Arduino IDE Library Manager
 
-2. **Upload Programs:**
-   - Open either Arduino program in Arduino IDE
+2. **Upload Example Programs:**
+   - Open either Arduino program from the `examples/` folder in Arduino IDE
    - Select your board and port
    - Upload the program
 
