@@ -6,23 +6,40 @@ extern "C" {
 }
 
 /* ---------- Pins ---------- */
-static const int PIN_LE    = 10;  // Latch Enable (LE)
-static const int PIN_CE    = 2;   // Chip Enable (CE), HIGH = enabled
-static const int PIN_LOSET = 6;   // From Pi: program/advance
-static const int PIN_RESET = 7;   // From Pi: reset sweep to band start
-static const int PIN_CALIB = 8;   // From Pi: select band (low/high)
+static const int PIN_LE       = 10;  // Latch Enable (LE)
+static const int PIN_CE       = 2;   // Chip Enable (CE), HIGH = enabled
+static const int PIN_LOSET    = 6;   // From Pi: program/advance
+static const int PIN_RESET    = 7;   // From Pi: reset sweep to band start
+static const int PIN_VCO_CTRL = 8;   // From Pi: VCO power control (HIGH=on, LOW=off)
 
-/* ---------- Sweep bands & steps ---------- */
-static const double A_MIN  = 650.0, A_MAX  = 850.0, A_STEP  = 2.0;
-static const double B_MIN  = 902.6, B_MAX  = 957.6, B_STEP  = 0.2;
+/* ---------- Frequency band configuration ---------- */
+// Basic sweep example - configure for your needs
+// Set BAND_SELECT to choose between two preset bands,
+// or modify FREQ_MIN/FREQ_MAX/FREQ_STEP directly
+#define BAND_SELECT 'A'  // 'A' or 'B' (see below)
+
+// Preset band configurations (modify as needed)
+#if BAND_SELECT == 'A'
+  static const double FREQ_MIN  = 650.0;   // MHz
+  static const double FREQ_MAX  = 850.0;   // MHz
+  static const double FREQ_STEP = 2.0;     // MHz
+  static const int8_t OUTPUT_POWER = +5;   // dBm
+#elif BAND_SELECT == 'B'
+  static const double FREQ_MIN  = 900.0;   // MHz
+  static const double FREQ_MAX  = 960.0;   // MHz
+  static const double FREQ_STEP = 0.2;     // MHz
+  static const int8_t OUTPUT_POWER = +5;   // dBm
+#else
+  #error "BAND_SELECT must be 'A' or 'B'"
+#endif
 
 /* ---------- Globals ---------- */
-static bool   bandHigh = true;     // false = Band A, true = Band B
-static double curFreq  = B_MIN;
+static double curFreq  = FREQ_MIN;
+static bool   vcoPowerOn = false;  // VCO power state
 
-static int prevLOSet = HIGH;
-static int prevReset = HIGH;
-static int prevCalib = HIGH;
+static int prevLOSet    = HIGH;
+static int prevReset    = HIGH;
+static int prevVCOCtrl  = HIGH;
 
 /* ---------- Helpers ---------- */
 static double quantizeToStep(double f, double fmin, double step) {
@@ -30,14 +47,10 @@ static double quantizeToStep(double f, double fmin, double step) {
   return fmin + n * step;
 }
 
-static double nextFreq(double f, bool hiBand) {
-  const double fmin = hiBand ? B_MIN : A_MIN;
-  const double fmax = hiBand ? B_MAX : A_MAX;
-  const double step = hiBand ? B_STEP : A_STEP;
-
-  double q = quantizeToStep(f, fmin, step);
-  double next = q + step;
-  if (next > fmax) next = fmax;   // change to: next = fmin;  // if you prefer wrap
+static double nextFreq(double f) {
+  double q = quantizeToStep(f, FREQ_MIN, FREQ_STEP);
+  double next = q + FREQ_STEP;
+  if (next > FREQ_MAX) next = FREQ_MAX;   // change to: next = FREQ_MIN;  // if you prefer wrap
   return next;
 }
 
@@ -115,13 +128,13 @@ static bool programLO(double freqMHz) {
   pp.fb_sel               = Fb_Fundamental;
   pp.output_divider       = cr.output_divider;
   pp.bs_clk_div           = cr.bs_clk_div;
-  pp.vco_powerdown        = false;
+  pp.vco_powerdown        = !vcoPowerOn;  // Control VCO power based on global state
   pp.mute_till_ld         = false;
   pp.aux_output_select    = Aux_Divided;
   pp.aux_output_enable    = false;
   pp.aux_output_power_dBm = -4;
   pp.output_enable        = true;
-  pp.output_power_dBm     = +5;
+  pp.output_power_dBm     = OUTPUT_POWER;
 
   // R5
   pp.ld_pin_mode          = LD_Digital;
@@ -146,21 +159,29 @@ static bool programLO(double freqMHz) {
 
   Serial.print(F("Prog: "));
   Serial.print(freqMHz, 3);
-  Serial.println(F(" MHz"));
+  Serial.print(F(" MHz @ "));
+  Serial.print(OUTPUT_POWER);
+  Serial.println(F(" dBm"));
   return true;
 }
 
 /* ---------- GPIO edge handling ---------- */
-static void handleCalibToggle() {
-  int s = digitalRead(PIN_CALIB);
-  if (s != prevCalib) {
-    prevCalib = s;
-    if (s == LOW) {                // falling edge: toggle band
-      bandHigh = !bandHigh;
-      curFreq = bandHigh ? B_MIN : A_MIN;
-      curFreq = quantizeToStep(curFreq, bandHigh?B_MIN:A_MIN, bandHigh?B_STEP:A_STEP);
-      Serial.print(F("CALIB falling: band -> "));
-      Serial.println(bandHigh ? F("High") : F("Low"));
+static void handleVCOControl() {
+  int s = digitalRead(PIN_VCO_CTRL);
+  if (s != prevVCOCtrl) {
+    prevVCOCtrl = s;
+    if (s == HIGH) {
+      // HIGH: Turn VCO ON (sweep start)
+      vcoPowerOn = true;
+      Serial.println(F("VCO ON - Sweep enabled"));
+      // Reprogram current frequency with VCO on
+      programLO(curFreq);
+    } else {
+      // LOW: Turn VCO OFF (sweep end)
+      vcoPowerOn = false;
+      Serial.println(F("VCO OFF - Sweep disabled"));
+      // Reprogram to power down VCO
+      programLO(curFreq);
     }
   }
 }
@@ -169,9 +190,9 @@ static void handleReset() {
   int s = digitalRead(PIN_RESET);
   if (s != prevReset) {
     prevReset = s;
-    if (s == LOW) {                // falling edge: reset to start of current band
-      curFreq = bandHigh ? B_MIN : A_MIN;
-      curFreq = quantizeToStep(curFreq, bandHigh?B_MIN:A_MIN, bandHigh?B_STEP:A_STEP);
+    if (s == LOW) {                // falling edge: reset to start of band
+      curFreq = FREQ_MIN;
+      curFreq = quantizeToStep(curFreq, FREQ_MIN, FREQ_STEP);
       Serial.println(F("Reset to band start"));
     }
   }
@@ -181,14 +202,19 @@ static void handleLOSet() {
   int s = digitalRead(PIN_LOSET);
   if (s != prevLOSet) {
     if (s == LOW) {
-      Serial.println(F("LOSET falling: program"));
-      // Falling edge: program current frequency
-      programLO(curFreq);
+      // Falling edge: program current frequency (only if VCO is on)
+      if (vcoPowerOn) {
+        Serial.println(F("LOSET falling: program"));
+        programLO(curFreq);
+      } else {
+        Serial.println(F("LOSET falling: skipped (VCO off)"));
+      }
     } else {
-      // Rising edge: advance to next
-      curFreq = nextFreq(curFreq, bandHigh);
+      // Rising edge: advance to next frequency
+      curFreq = nextFreq(curFreq);
       Serial.print(F("LOSET rising: advance -> "));
-      Serial.println(curFreq, 3);
+      Serial.print(curFreq, 3);
+      Serial.println(F(" MHz"));
     }
     prevLOSet = s;
   }
@@ -201,29 +227,49 @@ void setup() {
 
   pinMode(PIN_LOSET, INPUT);
   pinMode(PIN_RESET, INPUT);
-  pinMode(PIN_CALIB, INPUT);
+  pinMode(PIN_VCO_CTRL, INPUT);
 
   SPI.begin();
   SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
 
   Serial.begin(115200);
   while (!Serial) {}
-  Serial.println(F("\nADF4351 sweep ready."));
-  Serial.println(F("Use GPIO: LOSet(D6)=program/advance, Reset(D7)=reset, Calib(D8)=toggle band."));
+  
+  Serial.println(F("\n=== ADF4351 Basic Sweep ==="));
+  Serial.print(F("Range: "));
+  Serial.print(FREQ_MIN, 1);
+  Serial.print(F("-"));
+  Serial.print(FREQ_MAX, 1);
+  Serial.print(F(" MHz, step "));
+  Serial.print(FREQ_STEP, 1);
+  Serial.print(F(" MHz @ "));
+  Serial.print(OUTPUT_POWER);
+  Serial.println(F(" dBm"));
+  Serial.println(F("GPIO Control:"));
+  Serial.println(F("  D6 (LOSET): program/advance frequency"));
+  Serial.println(F("  D7 (RESET): reset to band start"));
+  Serial.println(F("  D8 (VCO_CTRL): VCO power (HIGH=on, LOW=off)"));
+  Serial.println();
 
   prevLOSet = digitalRead(PIN_LOSET);
   prevReset = digitalRead(PIN_RESET);
-  prevCalib = digitalRead(PIN_CALIB);
+  prevVCOCtrl = digitalRead(PIN_VCO_CTRL);
 
-  bandHigh = false;
-  curFreq = quantizeToStep(B_MIN, B_MIN, B_STEP);
-  // Program the initial frequency so LD can assert at boot (like the manual sketch)
+  // Initialize VCO state from pin
+  vcoPowerOn = (prevVCOCtrl == HIGH);
+  
+  curFreq = quantizeToStep(FREQ_MIN, FREQ_MIN, FREQ_STEP);
+  
+  // Program initial frequency with current VCO state
+  Serial.print(F("Initial frequency: "));
+  Serial.print(curFreq, 3);
+  Serial.print(F(" MHz, VCO: "));
+  Serial.println(vcoPowerOn ? F("ON") : F("OFF"));
   programLO(curFreq);
-}\
+}
 
- 
 void loop() {
-  handleCalibToggle();
+  handleVCOControl();
   handleReset();
   handleLOSet();
 }
