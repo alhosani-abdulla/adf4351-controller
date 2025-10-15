@@ -4,22 +4,27 @@ Arduino controller programs for the ADF4351 PLL frequency synthesizer with compr
 
 ## Repository Structure
 
+This repository is structured as an Arduino library following the official Arduino library specification.
+
 ```
 adf4351-controller/
-├── README.md              # This file
-├── LICENSE                # MIT License
-├── src/                   # Source code
-│   ├── LORegisterLibrary/    # ADF4351 register calculation library
-│   └── LORegisterLibrary.zip # Packaged library for Arduino IDE
-└── examples/              # Example Arduino programs
-    ├── LO_Manual_Controller/  # Interactive manual control
-    └── LO_Sweep_Controller/   # GPIO-controlled sweep
+├── README.md                  # This file
+├── LICENSE                    # MIT License
+├── library.properties         # Arduino library metadata
+├── src/                       # Library source code
+│   ├── LORegisterLibrary.cpp  # ADF4351 register implementation
+│   └── LORegisterLibrary.h    # ADF4351 register header
+└── examples/                  # Example sketches
+    ├── ManualControl/         # Interactive manual control
+    │   └── ManualControl.ino
+    └── SweepControl/          # GPIO-controlled sweep
+        └── SweepControl.ino
 ```
 
 ## Examples
 
-### 1. LO_Manual_Controller
-**File:** `examples/LO_Manual_Controller/LO_Manual_Controller.ino`
+### 1. Manual Control
+**File:** `examples/ManualControl/ManualControl.ino`
 
 Manual frequency control program that allows you to set specific frequencies for the Local Oscillator.
 
@@ -46,8 +51,8 @@ Manual frequency control program that allows you to set specific frequencies for
 - `s` - Show current status
 - `?` - Show help menu
 
-### 2. LO_Sweep_Controller  
-**File:** `examples/LO_Sweep_Controller/LO_Sweep_Controller.ino`
+### 2. Sweep Control  
+**File:** `examples/SweepControl/SweepControl.ino`
 
 Automated frequency sweep program that steps through a range of frequencies.
 
@@ -110,7 +115,7 @@ static const double B_MIN  = 902.6, B_MAX  = 957.6, B_STEP  = 0.2;
 
 ## LORegisterLibrary
 
-Both programs use the updated `LORegisterLibrary` located in `src/LORegisterLibrary/`:
+The core ADF4351 register calculation library is located in the `src/` directory.
 
 ### Key Features:
 - Full ADF4351 datasheet compliance
@@ -120,32 +125,32 @@ Both programs use the updated `LORegisterLibrary` located in `src/LORegisterLibr
 - Configurable reference frequency and dividers
 
 ### Library Files:
-- `LORegisterLibrary.h` - Header with data structures and function declarations
-- `LORegisterLibrary.cpp` - Implementation following ADF4351 specifications
+- `src/LORegisterLibrary.h` - Header with data structures and function declarations
+- `src/LORegisterLibrary.cpp` - Implementation following ADF4351 specifications
 - `library.properties` - Arduino library metadata
 
 ## Installation
 
-### Method 1: Direct Installation (Recommended)
-1. Copy the entire `src/LORegisterLibrary/` folder to your Arduino libraries directory:
-   - **Windows:** `Documents\Arduino\libraries\`
-   - **macOS:** `~/Documents/Arduino/libraries/`
-   - **Linux:** `~/Arduino/libraries/`
+### Method 1: Clone into Arduino Libraries (Recommended)
+1. Clone this repository directly into your Arduino libraries directory:
+   ```bash
+   cd ~/Documents/Arduino/libraries/  # macOS/Linux
+   # or cd Documents\Arduino\libraries\  # Windows
+   git clone https://github.com/alhosani-abdulla/adf4351-controller.git
+   ```
 2. Restart Arduino IDE
+3. The library will appear as "LORegisterLibrary" in **Sketch → Include Library**
 
 ### Method 2: ZIP Installation
-1. Create a ZIP file of the library:
-   ```bash
-   cd src
-   zip -r LORegisterLibrary.zip LORegisterLibrary/
-   ```
+1. Download the repository as ZIP from GitHub
 2. In Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
-3. Select the generated `LORegisterLibrary.zip` file
+3. Select the downloaded ZIP file
 
-### Upload Example Programs
-1. Open either Arduino program from the `examples/` folder in Arduino IDE
-2. Select your board and port
-3. Upload the program
+### Using Example Sketches
+1. In Arduino IDE: **File → Examples → ADF4351Controller**
+2. Choose either `ManualControl` or `SweepControl`
+3. Select your board and port
+4. Upload the sketch
 
 ### Serial Monitor
 - Set baud rate to 115200
