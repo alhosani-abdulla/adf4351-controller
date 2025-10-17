@@ -12,8 +12,8 @@ adf4351-controller/
 ├── LICENSE                    # MIT License
 ├── library.properties         # Arduino library metadata
 ├── src/                       # Library source code
-│   ├── LORegisterLibrary.cpp  # ADF4351 register implementation
-│   └── LORegisterLibrary.h    # ADF4351 register header
+│   ├── ADF4351Controller.cpp  # ADF4351 register implementation
+│   └── ADF4351Controller.h    # ADF4351 register header
 └── examples/                  # Example sketches
     ├── ManualControl/         # Interactive serial control
     │   └── ManualControl.ino
@@ -176,7 +176,7 @@ Sweep examples (BasicSweep, SweepMixer, SweepFilter):
 All examples support serial monitoring:
 - **USB Cable** → For serial communication, monitoring, and power
 
-## LORegisterLibrary
+## ADF4351Controller Library
 
 The core ADF4351 register calculation library is located in the `src/` directory.
 
@@ -188,8 +188,8 @@ The core ADF4351 register calculation library is located in the `src/` directory
 - Configurable reference frequency and dividers
 
 ### Library Files:
-- `src/LORegisterLibrary.h` - Header with data structures and function declarations
-- `src/LORegisterLibrary.cpp` - Implementation following ADF4351 specifications
+- `src/ADF4351Controller.h` - Header with data structures and function declarations
+- `src/ADF4351Controller.cpp` - Implementation following ADF4351 specifications
 - `library.properties` - Arduino library metadata
 
 ## Installation
@@ -202,7 +202,7 @@ The core ADF4351 register calculation library is located in the `src/` directory
    git clone https://github.com/alhosani-abdulla/adf4351-controller.git
    ```
 2. Restart Arduino IDE
-3. The library will appear as "LORegisterLibrary" in **Sketch → Include Library**
+3. The library will appear as "ADF4351Controller" in **Sketch → Include Library**
 
 ### Method 2: ZIP Installation
 1. Download the repository as ZIP from GitHub
@@ -274,5 +274,5 @@ For issues or questions:
 
 ## Version History
 
-- **v2.0** - Updated with new LORegisterLibrary following ADF4351 datasheet
+- **v2.0** - Updated with new ADF4351Controller library following ADF4351 datasheet
 - **v1.0** - Original implementation (obsolete)

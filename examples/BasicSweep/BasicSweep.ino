@@ -2,7 +2,7 @@
 #include <SPI.h>
 
 extern "C" {
-  #include "LORegisterLibrary.h"
+  #include "ADF4351Controller.h"
 }
 
 /* ---------- Pins ---------- */
