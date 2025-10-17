@@ -132,7 +132,12 @@ Purpose-built sweep for **filter characterization with signal injection**.
 #### GPIO Control (Raspberry Pi):
 - **Pin 6 (LOSET)**: Program/advance frequency
 - **Pin 7 (RESET)**: Reset to 900 MHz + toggle power level
-- **Pin 8 (VCO_CTRL)**: Enable/disable sweep
+- **Pin 8 (PD_CTRL)**: LO power-down control (HIGH=on, LOW=off)
+
+#### Power Control:
+- Uses **register 2 power-down** for clean on/off switching
+- When LOW: Complete power-down (no signal leakage)
+- When HIGH: LO powered and sweep enabled
 
 #### Sweep Sequence:
 1. Start at 900 MHz, +5 dBm
@@ -211,11 +216,23 @@ The core ADF4351 register calculation library is located in the `src/` directory
    - `BasicSweep` - Configurable GPIO sweep
    - `SweepMixer` - Mixer characterization (Band A)
    - `SweepFilter` - Filter characterization (Band B, dual power)
-3. Select your board and port
-4. Upload the sketch
+3. Configure your Arduino board:
+   - **Tools → Board** → Select your Arduino model
+   - **Tools → Processor** → Select your processor (if applicable)
+   - **Tools → Port** → Select your USB port
+   
+   **Example for Arduino Nano:**
+   - **Board:** "Arduino Nano"
+   - **Processor:** "ATmega328P"
+   - **Port:** "/dev/cu.usbserial-14110" (macOS/Linux) or "COM3" (Windows)
+   
+   > **Note:** The exact port name will vary. Look for `/dev/cu.usbserial-*` on macOS, `/dev/ttyUSB*` on Linux, or `COM*` on Windows.
+
+4. Upload the sketch: **Sketch → Upload** or click the Upload button (→)
 
 ### Serial Monitor
-- Set baud rate to 115200
+- Open via **Tools → Serial Monitor** or click the magnifying glass icon
+- Set baud rate to **115200** in the bottom-right dropdown
 - All examples provide serial output for monitoring and debugging
 
 ## Application Notes
