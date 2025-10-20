@@ -10,7 +10,7 @@ static const int PIN_LE       = 10;  // Latch Enable (LE)
 static const int PIN_CE       = 2;   // Chip Enable (CE), HIGH = enabled
 static const int PIN_LOSET    = 6;   // From Pi: program/advance
 static const int PIN_RESET    = 7;   // From Pi: reset sweep to band start
-static const int PIN_VCO_CTRL = 8;   // From Pi: VCO power control (HIGH=on, LOW=off)
+static const int PIN_PD_CTRL = 8;   // From Pi: Power-down control (HIGH=on, LOW=off)
 
 /* ---------- Frequency band configuration ---------- */
 // Band A (Mixer): 650-850 MHz, step 2.0 MHz
@@ -21,11 +21,11 @@ static const int OUTPUT_POWER = +5;  // Fixed output power in dBm
 
 /* ---------- Globals ---------- */
 static double curFreq     = FREQ_MIN;
-static bool   vcoPowerOn  = false;  // VCO power state
+static bool   powerdownLO  = true;   // Power-down state (true=off, false=on)
 
-static int prevLOSet    = HIGH;
-static int prevReset    = HIGH;
-static int prevVCOCtrl  = HIGH;
+static int prevLOSet      = HIGH;
+static int prevReset      = HIGH;
+static int prevPDCtrl     = HIGH;
 
 /* ---------- Helpers ---------- */
 static double quantizeToStep(double f, double fmin, double step) {
@@ -100,7 +100,7 @@ static bool programLO(double freqMHz) {
   pp.double_buff_r4           = false;
   pp.charge_pump_current_mA   = 2.50;
   pp.pd_polarity              = PD_Positive;
-  pp.powerdown                = false;
+  pp.powerdown                = powerdownLO;
   pp.cp_three_state           = false;
   pp.counter_reset            = false;
 
@@ -114,7 +114,7 @@ static bool programLO(double freqMHz) {
   pp.fb_sel               = Fb_Fundamental;
   pp.output_divider       = cr.output_divider;
   pp.bs_clk_div           = cr.bs_clk_div;
-  pp.vco_powerdown        = !vcoPowerOn;  // Control VCO power based on global state
+  pp.vco_powerdown        = false;  // Keep VCO powered (use R2 powerdown instead)
   pp.mute_till_ld         = false;
   pp.aux_output_select    = Aux_Divided;
   pp.aux_output_enable    = false;
@@ -150,19 +150,19 @@ static bool programLO(double freqMHz) {
 }
 
 /* ---------- GPIO edge handling ---------- */
-static void handleVCOControl() {
-  int s = digitalRead(PIN_VCO_CTRL);
-  if (s != prevVCOCtrl) {
-    prevVCOCtrl = s;
+static void handlePowerControl() {
+  int s = digitalRead(PIN_PD_CTRL);
+  if (s != prevPDCtrl) {
+    prevPDCtrl = s;
     if (s == HIGH) {
-      // HIGH: Turn VCO ON (sweep start)
-      vcoPowerOn = true;
-      Serial.println(F("VCO ON - Sweep enabled"));
+      // HIGH: Power ON (sweep enabled)
+      powerdownLO = false;
+      Serial.println(F("LO ON - Sweep enabled"));
       programLO(curFreq);
     } else {
-      // LOW: Turn VCO OFF (sweep end)
-      vcoPowerOn = false;
-      Serial.println(F("VCO OFF - Sweep disabled"));
+      // LOW: Power DOWN (sweep disabled)
+      powerdownLO = true;
+      Serial.println(F("LO OFF - Sweep disabled"));
       programLO(curFreq);
     }
   }
@@ -184,8 +184,8 @@ static void handleLOSet() {
   int s = digitalRead(PIN_LOSET);
   if (s != prevLOSet) {
     if (s == LOW) {
-      // Falling edge: program current frequency (only if VCO is on)
-      if (vcoPowerOn) {
+      // Falling edge: program current frequency (only if LO is powered on)
+      if (!powerdownLO) {
         Serial.println(F("LOSET falling: program"));
         programLO(curFreq);
       } else {
@@ -209,7 +209,7 @@ void setup() {
 
   pinMode(PIN_LOSET, INPUT);
   pinMode(PIN_RESET, INPUT);
-  pinMode(PIN_VCO_CTRL, INPUT);
+  pinMode(PIN_PD_CTRL, INPUT);
 
   SPI.begin();
   SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));
@@ -225,28 +225,29 @@ void setup() {
   Serial.println(F("GPIO Control:"));
   Serial.println(F("  D6 (LOSET): program/advance frequency"));
   Serial.println(F("  D7 (RESET): reset to band start"));
-  Serial.println(F("  D8 (VCO_CTRL): VCO power (HIGH=on, LOW=off)"));
+  Serial.println(F("  D8 (PD_CTRL): LO power-down (HIGH=on, LOW=off)"));
   Serial.println();
 
   prevLOSet = digitalRead(PIN_LOSET);
   prevReset = digitalRead(PIN_RESET);
-  prevVCOCtrl = digitalRead(PIN_VCO_CTRL);
+  prevPDCtrl = digitalRead(PIN_PD_CTRL);
 
-  // Initialize VCO state from pin
-  vcoPowerOn = (prevVCOCtrl == HIGH);
+  // Initialize states from pins
+  powerdownLO = (prevPDCtrl == LOW);  // LOW = powered down, HIGH = powered on
   
   curFreq = quantizeToStep(FREQ_MIN, FREQ_MIN, FREQ_STEP);
   
   // Program initial frequency with current VCO state
   Serial.print(F("Initial frequency: "));
   Serial.print(curFreq, 3);
-  Serial.print(F(" MHz, VCO: "));
-  Serial.println(vcoPowerOn ? F("ON") : F("OFF"));
+  Serial.print(F(" MHz, LO: "));
+  Serial.print(powerdownLO ? F("OFF") : F("ON"));
+  Serial.println(F(""));
   programLO(curFreq);
 }
 
 void loop() {
-  handleVCOControl();
+  handlePowerControl();
   handleReset();
   handleLOSet();
 }
