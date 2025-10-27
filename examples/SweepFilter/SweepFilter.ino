@@ -115,7 +115,7 @@ static bool programLO(double freqMHz) {
   pp.output_divider       = cr.output_divider;
   pp.bs_clk_div           = cr.bs_clk_div;
   pp.vco_powerdown        = false;  // Keep VCO powered (use R2 powerdown instead)
-  pp.mute_till_ld         = false;
+  pp.mute_till_ld         = true;
   pp.aux_output_select    = Aux_Divided;
   pp.aux_output_enable    = false;
   pp.aux_output_power_dBm = -4;

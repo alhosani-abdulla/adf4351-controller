@@ -21,7 +21,7 @@ static const double B_MIN  = 900.0, B_MAX  = 960.0, B_STEP  = 0.2;
 /* ---------- State ---------- */
 static bool   bandHigh      = false;   // false=A band, true=B band
 static double curFreq       = A_MIN;
-static bool   mtld          = false;   // Mute Till Lock Detect
+static bool   mtld          = true;   // Mute Till Lock Detect
 static bool   muxIsLD       = true;    // true = MUXOUT is DigitalLockDetect
 
 // NEW: user-settable RF output power for MAIN output (allowed: -4, -1, +2, +5 dBm)
