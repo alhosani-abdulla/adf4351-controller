@@ -15,7 +15,7 @@ static const int PIN_PD_CTRL = 8;   // From Pi: Power-down control (HIGH=on, LOW
 /* ---------- Frequency band configuration ---------- */
 // Band A (Mixer): 650-850 MHz, step 2.0 MHz
 static const double FREQ_MIN  = 650.0;
-static const double FREQ_MAX  = 850.0;
+static const double FREQ_MAX  = 936.0;
 static const double FREQ_STEP = 2.0;
 static const int OUTPUT_POWER = +5;  // Fixed output power in dBm
 
@@ -115,7 +115,7 @@ static bool programLO(double freqMHz) {
   pp.output_divider       = cr.output_divider;
   pp.bs_clk_div           = cr.bs_clk_div;
   pp.vco_powerdown        = false;  // Keep VCO powered (use R2 powerdown instead)
-  pp.mute_till_ld         = false;
+  pp.mute_till_ld         = true;
   pp.aux_output_select    = Aux_Divided;
   pp.aux_output_enable    = false;
   pp.aux_output_power_dBm = -4;

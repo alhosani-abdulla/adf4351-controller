@@ -14,8 +14,8 @@ static const int PIN_PD_CTRL    = 8;   // From Pi: Power-down control (HIGH=on, 
 
 /* ---------- Frequency band configuration ---------- */
 // Band B (Filter/Signal Injection): 900-960 MHz, step 0.2 MHz
-static const double FREQ_MIN  = 900.2;
-static const double FREQ_MAX  = 960.2;
+static const double FREQ_MIN  = 900;
+static const double FREQ_MAX  = 960;
 static const double FREQ_STEP = 0.2;
 
 /* ---------- Globals ---------- */
