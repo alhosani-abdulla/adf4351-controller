@@ -184,17 +184,22 @@ static void handleLOSet() {
   int s = digitalRead(PIN_LOSET);
   if (s != prevLOSet) {
     if (s == LOW) {
-      // Falling edge: program current frequency (only if LO is powered on)
+      // Falling edge: prepare for programming (no action)
+      Serial.println(F("LOSET falling: ready"));
+    } else {
+      // Rising edge: program current frequency THEN advance
+      // This ensures RPi can increment its counter before data collection
       if (!powerdownLO) {
-        Serial.println(F("LOSET falling: program"));
+        Serial.print(F("LOSET rising: program "));
+        Serial.print(curFreq, 3);
+        Serial.println(F(" MHz"));
         programLO(curFreq);
       } else {
-        Serial.println(F("LOSET falling: skipped (VCO off)"));
+        Serial.println(F("LOSET rising: skipped (VCO off)"));
       }
-    } else {
-      // Rising edge: advance to next frequency
+      // Advance to next frequency after programming
       curFreq = nextFreq(curFreq);
-      Serial.print(F("LOSET rising: advance -> "));
+      Serial.print(F("  Next: "));
       Serial.print(curFreq, 3);
       Serial.println(F(" MHz"));
     }
